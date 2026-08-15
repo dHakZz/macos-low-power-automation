@@ -20,7 +20,7 @@ Low Power Automation runs quietly in the background and manages Low Power Mode b
 
 ## Download
 
-**[Download the installer bundle](https://github.com/dHakZz/macos-low-power-automation/archive/refs/heads/main.zip)**
+**[Download Low Power Automation v1.0.0 Beta 1](https://github.com/dHakZz/macos-low-power-automation/releases/download/v1.0.0-beta.1/Low-Power-Automation-v1.0.0-beta.1.zip)**
 
 After unzipping it, keep the three `.command` files and the `payload` folder together.
 
