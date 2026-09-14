@@ -1,96 +1,78 @@
-# Low Power Automation
+# Low Power Automation 2.0
 
-A lightweight, dependency-free macOS automation that turns Low Power Mode on at a battery percentage you choose.
+A native, privacy-friendly macOS menu-bar utility that manages Apple's built-in Low Power Mode.
 
-> [!IMPORTANT]
-> **Beta compatibility:** v1.0.0 Beta 1 has been tested only on a MacBook Neo running macOS 26.6. Other Mac laptops that support Low Power Mode may work, but have not yet been verified.
+**[Download Low Power Automation v2.0.0 Beta 1](https://github.com/dHakZz/macos-low-power-automation/releases/download/v2.0.0-beta.1/Low-Power-Automation-v2.0.0.zip)**
 
-## What it does
+## What's new
 
-Low Power Automation runs quietly in the background and manages Low Power Mode based on the Mac's power source and current battery level.
+- Native menu-bar control using the battery + automation icon
+- Reacts to macOS battery and charger events instead of launching a script every minute
+- Five-minute fallback check for reliability
+- Separate on/off thresholds (hysteresis) to prevent rapid switching
+- Plugged-in choices: Automatic, Low Power, or Leave Unchanged
+- Pause/resume, Check Now, Battery Settings, and built-in diagnostics
+- Starts automatically and migrates/removes the earlier prototype
+- Restores the user's original power settings when uninstalled
 
-- Turns Low Power Mode **on** at or below your chosen battery threshold
-- Turns Low Power Mode **off** above the threshold
-- Turns Low Power Mode **off** while connected to power
-- Checks once when the service starts and every 60 seconds afterward
-- Supports any whole-number threshold from **10% through 90%**
-- Starts automatically as a system LaunchDaemon
-- Uses only built-in macOS tools—no third-party dependencies
-- Runs entirely on your Mac with no networking, analytics, or data collection
+## How it behaves
 
-## Download
+| Situation | Result |
+| --- | --- |
+| Battery reaches the **on** threshold | Low Power Mode turns on |
+| Battery rises to the **off** threshold | Low Power Mode turns off |
+| Battery is between the two thresholds | Current mode is preserved |
+| Power adapter is connected | Uses your selected plugged-in policy |
 
-**[Download Low Power Automation v1.0.0 Beta 1](https://github.com/dHakZz/macos-low-power-automation/releases/download/v1.0.0-beta.1/Low-Power-Automation-v1.0.0-beta.1.zip)**
-
-After unzipping it, keep the three `.command` files and the `payload` folder together.
+The gap between the thresholds prevents the mode from repeatedly switching when the battery is near one percentage. The service normally reacts to macOS power events and performs one fallback check every five minutes. It makes no network requests and has negligible idle overhead.
 
 ## Install
 
-1. Download and unzip the installer bundle.
-2. Double-click **Install Low Power Automation.command**.
-3. Enter a whole-number threshold from **10 through 90**. The installer starts with 50% as the suggested value.
-4. Enter an administrator password when macOS asks.
-5. Wait for the **Low Power Automation is installed** message.
+1. Unzip the download.
+2. Control-click **Install Low Power Automation.command**, choose **Open**, and confirm.
+3. Choose the on threshold, off threshold, and plugged-in behavior.
+4. Enter an administrator password when asked.
 
-If macOS blocks the unsigned installer, Control-click **Install Low Power Automation.command**, choose **Open**, then confirm **Open**. The included scripts are source-readable if you would like to review them first.
+The menu-bar app installs in `/Applications`. The power service runs separately, so choosing **Quit Menu Bar App** hides the controls without stopping the automation. Log out and back in to reopen it, or open **Low Power Automation** from Applications.
 
-## Threshold behavior
+Upgrading from version 1 is supported. The installer stops and removes the older service after preserving the original power settings.
 
-| Power state | Battery level | Low Power Mode |
-| --- | --- | --- |
-| On battery | At or below the threshold | On |
-| On battery | Above the threshold | Off |
-| Connected to power | Any level | Off |
+## Verify and troubleshoot
 
-The check runs when the background service starts and once every 60 seconds after that.
+Choose **Diagnostics…** from the menu-bar icon. The panel shows the service, battery, thresholds, and current policy in plain language.
 
-To choose a different threshold later, double-click **Change Threshold.command**, enter a new value from 10 through 90, and approve the administrator prompt. The new setting is saved and checked immediately; reinstalling is not required.
-
-## Requirements
-
-- A Mac laptop that supports Low Power Mode
-- Administrator access for installation, threshold changes, and removal
-- For this beta, a willingness to test outside the verified MacBook Neo and macOS 26.6 configuration
-
-Low Power Automation uses Apple's built-in `pmset` command. Its background process runs as a root-owned LaunchDaemon because changing system power settings requires administrator privileges.
-
-## Uninstall
-
-Double-click **Uninstall Low Power Automation.command** and approve the administrator prompt.
-
-The uninstaller removes the LaunchDaemon, installed scripts, saved configuration, and logs. When available, it also restores the battery and AC Low Power Mode settings recorded during the first installation.
-
-## Troubleshooting
-
-- **macOS says the installer cannot be opened:** Control-click the installer, choose **Open**, then confirm **Open**.
-- **The installer says it is incomplete:** Keep the `payload` folder beside the three `.command` files and try again.
-- **The threshold changer says the automation is not installed:** Run **Install Low Power Automation.command** first.
-- **Low Power Mode has not changed yet:** Allow up to 60 seconds, then verify the service using the command below.
+Technical check:
 
 ```sh
 sudo launchctl print system/com.community.low-power-automation
 ```
 
-`runs` should increase over time, and `last exit code = 0` indicates a successful check. A state of `not running` is normal between the one-minute checks. Errors written by the background process are stored at `/var/log/low-power-automation-error.log`.
+Logs are stored at `/Library/Logs/Low Power Automation.log`. No network requests, analytics, accounts, or third-party dependencies are used.
 
-If the problem continues, [open a bug report](https://github.com/dHakZz/macos-low-power-automation/issues/new/choose) with your Mac model, macOS version, selected threshold, and what you expected to happen.
+If something goes wrong, [open an issue](https://github.com/dHakZz/macos-low-power-automation/issues/new/choose) and include the Diagnostics results, Mac model, and macOS version.
 
-## Included files
+## Uninstall
 
-| File | Purpose |
+Run **Uninstall Low Power Automation.command** and approve the administrator prompt. The app, background service, configuration, and logs are removed. The battery and plugged-in settings saved during the first installation are restored when available.
+
+## Security and privacy
+
+The menu-bar app runs as the signed-in user. A small root-owned service performs only local battery checks and calls Apple's built-in `pmset` utility when the energy mode needs to change. Configuration changes require an administrator prompt. All Swift and shell source is included in this repository for review.
+
+## Repository layout
+
+| Path | Purpose |
 | --- | --- |
-| `Install Low Power Automation.command` | Chooses the initial threshold and installs the automation |
-| `Change Threshold.command` | Updates the threshold without reinstalling |
-| `Uninstall Low Power Automation.command` | Removes the automation and restores saved power settings |
-| `payload/` | Contains the readable LaunchDaemon and shell-script source |
+| `Source/` | Native Swift menu-bar app and event-driven service |
+| `app/` | App metadata; the release ZIP also contains the built app bundle |
+| `payload/` | LaunchDaemon, login item, and privileged helper source |
+| `Developer/` | Reproducible universal build script |
 
-## Privacy
+## Compatibility and distribution
 
-There are no accounts, network connections, analytics, advertising, or collected data. Everything runs locally using macOS system tools.
+Built as a universal app for Intel and Apple silicon Macs running macOS 13 or newer. Low Power Mode must be supported by the Mac.
 
-## Help test other Macs
-
-This beta has only been verified on a MacBook Neo running macOS 26.6. If you try it on another Mac, please [share your results](https://github.com/dHakZz/macos-low-power-automation/issues/new/choose), including the Mac model, macOS version, selected threshold, and whether installation, automatic switching, threshold changes, and uninstallation worked.
+This community build is ad-hoc signed for integrity, but it is not Developer ID signed or notarized, so Gatekeeper may require the Control-click/Open flow. A warning-free public release requires an Apple Developer ID and notarization.
 
 ## License
 

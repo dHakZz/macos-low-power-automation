@@ -1,53 +1,59 @@
 #!/bin/zsh
 set -euo pipefail
+SOURCE="${0:A:h}"
+[[ -x "$SOURCE/payload/low-power-daemon" && -d "$SOURCE/app/Low Power Automation.app" ]] || { /usr/bin/osascript -e 'display alert "Installer is incomplete" message "Keep every included folder beside this installer." as critical'; exit 1; }
 
-SCRIPT_DIR="${0:A:h}"
-
-if [[ ! -f "$SCRIPT_DIR/payload/install-root.sh" ]]; then
-  /usr/bin/osascript -e 'display alert "Installer is incomplete" message "Keep the payload folder beside this installer and try again." as critical'
-  exit 1
-fi
-
-threshold="$(/usr/bin/osascript <<'APPLESCRIPT'
-set defaultThreshold to "50"
+settings="$(/usr/bin/osascript <<'APPLESCRIPT'
+set onValue to 40
 repeat
-  set response to display dialog "Choose the battery percentage at which Low Power Mode should turn on." default answer defaultThreshold buttons {"Cancel", "Install"} default button "Install" with title "Low Power Automation"
-  set enteredValue to text returned of response
+  set answerOn to text returned of (display dialog "Turn Low Power Mode on when the battery reaches:" default answer (onValue as text) buttons {"Cancel", "Next"} default button "Next" with title "Low Power Automation v2")
   try
-    set thresholdValue to enteredValue as integer
-    if thresholdValue ≥ 10 and thresholdValue ≤ 90 then return thresholdValue as text
+    set onValue to answerOn as integer
+    if onValue ≥ 10 and onValue ≤ 90 then exit repeat
   end try
   display alert "Enter a whole number from 10 through 90." as warning
-  set defaultThreshold to enteredValue
 end repeat
+set offValue to onValue + 10
+repeat
+  set answerOff to text returned of (display dialog "Turn Low Power Mode off after the battery rises to:\n\nKeeping this higher than the on level prevents rapid switching." default answer (offValue as text) buttons {"Cancel", "Next"} default button "Next" with title "Low Power Automation v2")
+  try
+    set offValue to answerOff as integer
+    if offValue > onValue and offValue ≤ 95 then exit repeat
+  end try
+  display alert "Enter a whole number higher than " & onValue & " and no higher than 95." as warning
+end repeat
+set acChoice to choose from list {"Automatic mode (recommended)", "Low Power Mode", "Leave the current setting unchanged"} with title "When connected to power" with prompt "Choose the energy mode to use while plugged in:" default items {"Automatic mode (recommended)"}
+if acChoice is false then error number -128
+if item 1 of acChoice starts with "Automatic" then
+  set acValue to "automatic"
+else if item 1 of acChoice is "Low Power Mode" then
+  set acValue to "lowPower"
+else
+  set acValue to "unchanged"
+end if
+return (onValue as text) & "|" & (offValue as text) & "|" & acValue
 APPLESCRIPT
 )" || exit 0
+IFS='|' read -r ON OFF PLUGGED <<< "$settings"
+[[ "$ON" =~ '^[0-9]{2}$' && "$OFF" =~ '^[0-9]{2}$' ]] && (( ON >= 10 && OFF > ON && OFF <= 95 )) || exit 2
 
-[[ "$threshold" =~ '^[0-9]{2}$' ]] && (( threshold >= 10 && threshold <= 90 )) || exit 1
-
-STAGING_DIR="$(/usr/bin/mktemp -d /private/tmp/low-power-automation.XXXXXX)"
+STAGE="$(/usr/bin/mktemp -d /private/tmp/low-power-automation-v2.XXXXXX)"
 cleanup() {
-  [[ "$STAGING_DIR" == /private/tmp/low-power-automation.* && -d "$STAGING_DIR" ]] || return 0
-  /bin/rm -f "$STAGING_DIR/payload/low-power-watcher.sh" "$STAGING_DIR/payload/com.community.low-power-automation.plist" "$STAGING_DIR/payload/install-root.sh" "$STAGING_DIR/payload/uninstall-root.sh" "$STAGING_DIR/payload/configure-root.sh"
-  /bin/rmdir "$STAGING_DIR/payload" "$STAGING_DIR" 2>/dev/null || true
+  [[ "$STAGE" == /private/tmp/low-power-automation-v2.* && -d "$STAGE" ]] || return 0
+  /bin/rm -rf "$STAGE"
 }
 trap cleanup EXIT
-/usr/bin/ditto "$SCRIPT_DIR/payload" "$STAGING_DIR/payload"
+/usr/bin/ditto "$SOURCE/payload" "$STAGE/payload"
+/usr/bin/ditto "$SOURCE/app" "$STAGE/app"
 
-/usr/bin/osascript - "$STAGING_DIR" "$threshold" <<'APPLESCRIPT'
+/usr/bin/osascript - "$STAGE" "$ON" "$OFF" "$PLUGGED" <<'APPLESCRIPT'
 on run argv
-  set sourceFolder to item 1 of argv
-  set thresholdValue to item 2 of argv
-  set shellCommand to quoted form of (sourceFolder & "/payload/install-root.sh") & " " & quoted form of sourceFolder & " " & quoted form of thresholdValue
+  set commandText to quoted form of ((item 1 of argv) & "/payload/install-root.sh") & " " & quoted form of (item 1 of argv) & " " & quoted form of (item 2 of argv) & " " & quoted form of (item 3 of argv) & " " & quoted form of (item 4 of argv)
   try
-    do shell script shellCommand with administrator privileges
-    display dialog "Low Power Automation is installed.\n\nLow Power Mode will turn on at " & thresholdValue & "% or below while on battery, and turn off above that level or when connected to power." buttons {"Done"} default button "Done" with icon note
-  on error errorMessage number errorNumber
-    if errorNumber is -128 then
-      display alert "Installation cancelled" message "No additional changes were made."
-    else
-      display alert "Installation failed" message errorMessage as critical
-    end if
+    do shell script commandText with administrator privileges
+    display dialog "Installation complete. Look for the battery-and-arrows icon in the menu bar." buttons {"Done"} default button "Done" with icon note
+  on error messageText number errorNumber
+    if errorNumber is not -128 then display alert "Installation failed" message messageText as critical
   end try
 end run
 APPLESCRIPT

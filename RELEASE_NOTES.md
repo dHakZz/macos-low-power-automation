@@ -1,23 +1,15 @@
-# Low Power Automation v1.0.0 Beta 1
+# Version 2.0.0 Beta 1
 
-## Compatibility notice
+## Highlights
 
-This beta has been tested only on a MacBook Neo running macOS 26.6. It may work on other Mac laptops that support Low Power Mode, but those configurations have not yet been tested.
+- New native menu-bar app with the Battery + Automation icon
+- Event-driven battery and charger monitoring
+- Separate activation and recovery thresholds
+- Configurable behavior while connected to power
+- Pause, Check Now, Battery Settings, and Diagnostics controls
+- Automatic migration from the 1.x community service and Justin prototype
+- Universal Intel and Apple silicon binaries
 
-## Features
+## Known distribution limitation
 
-- Enables Low Power Mode at a battery percentage selected during installation.
-- Supports thresholds from 10% through 90%.
-- Disables Low Power Mode above the threshold or when connected to power.
-- Checks at startup and once every 60 seconds.
-- Includes a separate threshold-changing utility.
-- Includes an uninstaller that restores the original energy settings.
-- Uses no network connections, analytics, or third-party dependencies.
-
-## Testing requests
-
-When reporting results, include the Mac model, macOS version, selected threshold, and whether installation, automatic switching, threshold changes, and uninstallation worked.
-
-## Important
-
-This beta is unsigned. macOS may require users to Control-click the installer and select **Open**. Administrator access is required because changing system power settings requires elevated privileges.
+This beta is ad-hoc signed for bundle integrity, not Developer ID signed or notarized. Testers may need to Control-click the installer and select Open. Developer ID signing and Apple notarization require the distributor's Apple Developer credentials and should be completed before a general public release.
