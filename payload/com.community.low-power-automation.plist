@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.community.low-power-automation</string>
-  <key>ProgramArguments</key>
-  <array><string>/usr/local/libexec/low-power-automation/low-power-watcher.sh</string></array>
-  <key>RunAtLoad</key><true/>
-  <key>StartInterval</key><integer>60</integer>
-  <key>ProcessType</key><string>Background</string>
-  <key>StandardOutPath</key><string>/var/log/low-power-automation.log</string>
-  <key>StandardErrorPath</key><string>/var/log/low-power-automation-error.log</string>
-</dict>
-</plist>
+<plist version="1.0"><dict>
+<key>Label</key><string>com.community.low-power-automation</string>
+<key>ProgramArguments</key><array><string>/usr/local/libexec/low-power-automation/low-power-daemon</string></array>
+<key>RunAtLoad</key><true/>
+<key>KeepAlive</key><true/>
+<key>ProcessType</key><string>Background</string>
+<key>ThrottleInterval</key><integer>10</integer>
+<key>StandardOutPath</key><string>/Library/Logs/Low Power Automation.stdout.log</string>
+<key>StandardErrorPath</key><string>/Library/Logs/Low Power Automation.stderr.log</string>
+</dict></plist>
