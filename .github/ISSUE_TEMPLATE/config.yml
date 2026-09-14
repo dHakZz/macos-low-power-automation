@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Setup and troubleshooting guide
-    url: https://github.com/dHakZz/macos-low-power-automation#troubleshooting
-    about: Check installation, Gatekeeper, service verification, and uninstall guidance before opening an issue.
+    url: https://github.com/dHakZz/macos-low-power-automation#verify-and-troubleshoot
+    about: Check installation, Gatekeeper, menu-bar diagnostics, logs, and uninstall guidance before opening an issue.
